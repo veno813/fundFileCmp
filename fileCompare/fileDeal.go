@@ -2,6 +2,7 @@ package filecompare
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	fileconfig "fundFileCmp/fileConfig"
 	"fundFileCmp/logging"
@@ -10,7 +11,11 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strings"
 	"time"
+
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 //最多支持500个销售商
@@ -111,13 +116,13 @@ func cmpDisFolder() {
 
 func cmpDisFile(filePath string) {
 	start := time.Now()
-	for k, v := range cmpDisList {
+	for _, v := range cmpDisList {
 		if v == "" {
 			break
 		}
 		logging.Info("开始", v, "销售商数据比对")
 		cmpSingelDisFile(filePath, v)
-		fmt.Println("第", k+1, "个销售商文件比对开始")
+		//fmt.Println("第", k+1, "个销售商文件比对开始")
 	}
 	cost := time.Since(start)
 	fmt.Println("总计用时:", cost)
@@ -146,7 +151,7 @@ func cmpSingelDisFile(filePath string, disCode string) {
 
 	//开始比对单个文件
 	for _, v := range cmpFileList {
-		cmpCfmFile(hsFilePath+confirmPath+v, lsFilePath+confirmPath+v)
+		cmpCfmFile(hsFilePath+confirmPath+v, lsFilePath+confirmPath+v, disCode)
 	}
 
 }
@@ -212,18 +217,41 @@ func cmpDisFileNum(hsFileList []string, lsFileList []string) (cmpFileList []stri
 	return cmpFileList
 }
 
-func cmpCfmFile(hsfile string, lsfile string) bool {
+func cmpCfmFile(hsfile string, lsfile string, disCode string) bool {
 	//fmt.Println(hsfile)
 	//fmt.Println(lsfile)
-	file, err := os.Open(hsfile)
+	var hslineText []string
+	var lslineText []string
+	var result bool
+	fileH, err := os.Open(hsfile)
 	if err != nil {
 		logging.Fatal(err)
 	}
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lineText := scanner.Text()
-		fmt.Println(lineText)
+
+	scannerHs := bufio.NewScanner(fileH)
+	for scannerHs.Scan() {
+		//lineText := scanner.Text()
+		//gbk读取又乱码，需要转换
+		lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerHs.Text())), simplifiedchinese.GBK.NewEncoder()))
+		hslineText = append(hslineText, string(lineText[:]))
 	}
 
-	return true
+	fileL, err := os.Open(lsfile)
+	if err != nil {
+		logging.Fatal(err)
+	}
+	scannerLs := bufio.NewScanner(fileL)
+	for scannerLs.Scan() {
+		//lineText := scanner.Text()
+		lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerLs.Text())), simplifiedchinese.GBK.NewEncoder()))
+		lslineText = append(lslineText, string(lineText[:]))
+	}
+	if strings.Contains(hsfile, "_02.") {
+		//fmt.Println("这个是02文件")
+		//fmt.Println(hslineText)
+		//fmt.Println(lslineText)
+		result = cmp02File(hslineText, lslineText, disCode)
+	}
+
+	return result
 }
