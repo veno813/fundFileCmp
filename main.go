@@ -4,7 +4,7 @@ import (
 	"fmt"
 	filecompare "fundFileCmp/fileCompare"
 	fileconfig "fundFileCmp/fileConfig"
-	"log"
+	"fundFileCmp/logging"
 
 	"github.com/go-ini/ini"
 )
@@ -17,15 +17,17 @@ var AppSetting = &App{}
 
 func main() {
 	Cfg, err := ini.Load("config/app.ini")
-	log.Println("开始解析配置文件conf/app.ini")
-	defer log.Println("配置文件conf/app.ini解析完成")
+
+	logging.Setup()
+	logging.Info("开始解析配置文件conf/app.ini")
+	//defer log.Println("配置文件conf/app.ini解析完成")
 	if err != nil {
-		log.Fatalf("conf/app.ini配置文件有误,错误信息:%v", err)
+		logging.Fatal("conf/app.ini配置文件有误,错误信息:%v", err)
 	}
 
 	err = Cfg.Section("app").MapTo(AppSetting)
 	if err != nil {
-		log.Fatalf("conf/app.ini配置文件[app]中内容有误,错误信息:%v", err)
+		logging.Fatal("conf/app.ini配置文件[app]中内容有误,错误信息:%v", err)
 	}
 
 	var n int = 0
