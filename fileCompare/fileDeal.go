@@ -2,7 +2,6 @@ package filecompare
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	fileconfig "fundFileCmp/fileConfig"
 	"fundFileCmp/logging"
@@ -14,8 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
+	"github.com/axgle/mahonia"
 )
 
 //最多支持500个销售商
@@ -137,10 +135,16 @@ func cmpSingelDisFile(filePath string, disCode string) {
 	//比对确认文件夹
 	var confirmPath string = "/Confirm/"
 	//比对行情文件夹
-	//var funddayPath string = "/FundDay"
+	var funddayPath string = "/FundDay/"
+	//确认文件夹下数据
 	var hsFileList []string
 	var lsFileList []string
 	var cmpFileList []string
+	//行情文件夹下数据
+
+	var hsFunddayFileList []string
+	var lsFunddayFileList []string
+	var cmpFunddayFileList []string
 
 	hsFileList = getFileList(hsFilePath + confirmPath)
 	lsFileList = getFileList(lsFilePath + confirmPath)
@@ -151,7 +155,19 @@ func cmpSingelDisFile(filePath string, disCode string) {
 
 	//开始比对单个文件
 	for _, v := range cmpFileList {
+		logging.Info("开始核对", v, "文件")
 		cmpCfmFile(hsFilePath+confirmPath+v, lsFilePath+confirmPath+v, disCode)
+		logging.Info(v, "文件核对完成")
+	}
+
+	hsFunddayFileList = getFileList(hsFilePath + funddayPath)
+	lsFunddayFileList = getFileList(lsFilePath + funddayPath)
+	cmpFunddayFileList = cmpDisFileNum(hsFunddayFileList, lsFunddayFileList)
+
+	for _, v := range cmpFunddayFileList {
+		logging.Info("开始核对", v, "文件")
+		cmpFunddayFile(hsFilePath+funddayPath+v, lsFilePath+funddayPath+v, disCode)
+		logging.Info(v, "文件核对完成")
 	}
 
 }
@@ -222,7 +238,7 @@ func cmpCfmFile(hsfile string, lsfile string, disCode string) bool {
 	//fmt.Println(lsfile)
 	var hslineText []string
 	var lslineText []string
-	var result bool
+	//var result bool
 	fileH, err := os.Open(hsfile)
 	if err != nil {
 		logging.Fatal(err)
@@ -232,8 +248,8 @@ func cmpCfmFile(hsfile string, lsfile string, disCode string) bool {
 	for scannerHs.Scan() {
 		//lineText := scanner.Text()
 		//gbk读取又乱码，需要转换
-		lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerHs.Text())), simplifiedchinese.GBK.NewEncoder()))
-		hslineText = append(hslineText, string(lineText[:]))
+		//lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerHs.Text())), simplifiedchinese.GBK.NewEncoder()))
+		hslineText = append(hslineText, ConvertToString(scannerHs.Text(), "GBK", "UTF-8"))
 	}
 
 	fileL, err := os.Open(lsfile)
@@ -243,15 +259,106 @@ func cmpCfmFile(hsfile string, lsfile string, disCode string) bool {
 	scannerLs := bufio.NewScanner(fileL)
 	for scannerLs.Scan() {
 		//lineText := scanner.Text()
-		lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerLs.Text())), simplifiedchinese.GBK.NewEncoder()))
-		lslineText = append(lslineText, string(lineText[:]))
+		//lineText := ConvertToString(scannerLs.Text(),"GBK","UTF-8")
+		lslineText = append(lslineText, ConvertToString(scannerLs.Text(), "GBK", "UTF-8"))
 	}
 	if strings.Contains(hsfile, "_02.") {
 		//fmt.Println("这个是02文件")
 		//fmt.Println(hslineText)
 		//fmt.Println(lslineText)
-		result = cmp02File(hslineText, lslineText, disCode)
+		cmp02File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_04.") {
+		//go cmp04File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_05.") {
+		cmp05File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_06.") {
+		//06后续实现，暂时用全量比对方式比对
+		//cmp06File(hslineText, lslineText, disCode)
+		AllCmpFile(hslineText, lslineText, disCode, "06")
+	} else if strings.Contains(hsfile, "_09.") {
+		//09采用全量方式比对
+		AllCmpFile(hslineText, lslineText, disCode, "09")
+	} else if strings.Contains(hsfile, "_10.") {
+		cmp10File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_11.") {
+		cmp11File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_12.") {
+		cmp12File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_24.") {
+		//24采用全量方式比对
+		AllCmpFile(hslineText, lslineText, disCode, "24")
+	} else if strings.Contains(hsfile, "_25.") {
+		cmp25File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_26.") {
+		//26采用全量方式比对
+		AllCmpFile(hslineText, lslineText, disCode, "26")
+	} else if strings.Contains(hsfile, "_44.") {
+		//44采用全量方式比对
+		AllCmpFile(hslineText, lslineText, disCode, "44")
+	} else if strings.Contains(hsfile, "_R2.") {
+		//R2采用全量方式比对
+		AllCmpFile(hslineText, lslineText, disCode, "R2")
+	} else {
+		//索引文件进行全量比对
+		//有文件缺失，导致索引文件均不一致，先不比对
+		//AllCmpFile(hslineText, lslineText, disCode, "索引文件")
 	}
 
+	return true
+}
+
+func cmpFunddayFile(hsfile string, lsfile string, disCode string) bool {
+	//fmt.Println(hsfile)
+	//fmt.Println(lsfile)
+	var hslineText []string
+	var lslineText []string
+	//var result bool
+	fileH, err := os.Open(hsfile)
+	if err != nil {
+		logging.Fatal(err)
+	}
+
+	scannerHs := bufio.NewScanner(fileH)
+	for scannerHs.Scan() {
+		//lineText := scanner.Text()
+		//gbk读取又乱码，需要转换
+		//lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerHs.Text())), simplifiedchinese.GBK.NewEncoder()))
+		hslineText = append(hslineText, ConvertToString(scannerHs.Text(), "GBK", "UTF-8"))
+	}
+
+	fileL, err := os.Open(lsfile)
+	if err != nil {
+		logging.Fatal(err)
+	}
+	scannerLs := bufio.NewScanner(fileL)
+	for scannerLs.Scan() {
+		//lineText := scanner.Text()
+		//lineText := ConvertToString(scannerLs.Text(),"GBK","UTF-8")
+		lslineText = append(lslineText, ConvertToString(scannerLs.Text(), "GBK", "UTF-8"))
+	}
+	if strings.Contains(hsfile, "_07.") {
+		//先进行全量比对，拿到数据再改
+		AllCmpFile(hslineText, lslineText, disCode, "07")
+	} else if strings.Contains(hsfile, "_08.") {
+		//公告文件全量比对
+		AllCmpFile(hslineText, lslineText, disCode, "08")
+	} else if strings.Contains(hsfile, "_21.") {
+		cmp21File(hslineText, lslineText, disCode)
+	} else {
+		//索引文件进行全量比对
+		//有文件缺失，导致索引文件均不一致，先不比对
+		//AllCmpFile(hslineText, lslineText, disCode, "索引文件")
+	}
+
+	return true
+}
+
+//GBK转utf8的方法
+func ConvertToString(src string, srcCode string, tagCode string) string {
+	srcCoder := mahonia.NewDecoder(srcCode)
+	srcResult := srcCoder.ConvertString(src)
+	tagCoder := mahonia.NewDecoder(tagCode)
+	_, cdata, _ := tagCoder.Translate([]byte(srcResult), true)
+	result := string(cdata)
 	return result
 }
