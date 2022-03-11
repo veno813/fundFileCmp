@@ -32,7 +32,7 @@ func main() {
 
 	var n int = 0
 	fmt.Println("请输入需要比对的文件类型")
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 6; i++ {
 		fmt.Println(i, ":", fileconfig.FileType[i])
 	}
 	fmt.Scanln(&n)

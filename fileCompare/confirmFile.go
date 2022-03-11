@@ -1,7 +1,6 @@
 package filecompare
 
 import (
-	"fmt"
 	"fundFileCmp/logging"
 	"strconv"
 	"strings"
@@ -21,7 +20,7 @@ func AllCmpFile(hsfile []string, lsfile []string, disCode string, fileType strin
 		logging.CmpInfo(disCode, fileType, "文件行数不一致")
 		logging.CmpInfo(disCode, "恒生行数:", hsNum)
 		logging.CmpInfo(disCode, "融先内容:", lsNum)
-		return false
+		//	return false
 	}
 
 	for i := 0; i < num; i++ {
@@ -62,6 +61,8 @@ func cmp02File(hs02file []string, ls02file []string, disCode string) bool {
 	//37行为文件内容数量
 	hsNum, _ = strconv.Atoi(hs02file[37])
 	lsNum, _ = strconv.Atoi(ls02file[37])
+	logging.CmpInfo(disCode, "恒生导出数量:", hsNum)
+	logging.CmpInfo(disCode, "融先导出数量:", lsNum)
 
 	if hsNum != lsNum {
 		logging.CmpInfo(disCode, "02文件恒生导出数量与融先导出数量不一致")
@@ -103,6 +104,16 @@ func cmp02FileContent(hsContent []string, lsContent []string, disCode string) bo
 				result = false
 				logging.CmpInfo(disCode, "02文件存在问题,请核对")
 			}
+			if lsConMap[k] == "" {
+				if result {
+					result = false
+					logging.CmpInfo(disCode, "02文件存在问题,请核对")
+				}
+				logging.CmpInfo(disCode, "02文件数据缺失")
+				logging.CmpInfo(disCode, "恒生份额", v)
+				logging.CmpInfo(disCode, "融先系统导出02文件无法找到匹配数据")
+				continue
+			}
 			//交易确认日期
 			if v[24:24+8] != lsConMap[k][24:24+8] {
 				logging.CmpInfo(disCode, "02文件申请单号:", k, "交易确认日期不一致")
@@ -115,10 +126,10 @@ func cmp02FileContent(hsContent []string, lsContent []string, disCode string) bo
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][32:32+4])
 			}
 			//基金账号暂不稽核，需要稽核后修改比对条件v[38:38+17+9+3+12] != lsConMap[k][38:38+17+9+3+12]
-			if v[38:38+17+9+3+12] != lsConMap[k][38:38+17+9+3+12] {
+			if v[36:36+17+9+3+12] != lsConMap[k][36:36+17+9+3+12] {
 				logging.CmpInfo(disCode, "02文件申请单号:", k, "基础信息不一致(交易账号,销售商代码,业务代码,基金账号)")
-				logging.CmpInfo(disCode, "恒生数据", v[38:38+17+9+3+12])
-				logging.CmpInfo(disCode, "融先数据", lsConMap[k][38:38+17+9+3+12])
+				logging.CmpInfo(disCode, "恒生数据", v[36:36+17+9+3+12])
+				logging.CmpInfo(disCode, "融先数据", lsConMap[k][36:36+17+9+3+12])
 			}
 			if v[77:77+1] != lsConMap[k][77:77+1] {
 				logging.CmpInfo(disCode, "02文件申请单号:", k, "开户渠道标识不一致")
@@ -149,6 +160,20 @@ func cmp02FileContent(hsContent []string, lsContent []string, disCode string) bo
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][315:])
 			}
 
+		}
+	}
+
+	//比对恒生缺失份额数据
+	for k, v := range lsConMap {
+		if hsConMap[k] == "" {
+			if result {
+				result = false
+				logging.CmpInfo(disCode, "02文件存在问题,请核对")
+			}
+			logging.CmpInfo(disCode, "02文件数据缺失")
+			logging.CmpInfo(disCode, "融先份额", v)
+			logging.CmpInfo(disCode, "恒生系统导出02文件无法找到匹配数据")
+			continue
 		}
 	}
 	if !result {
@@ -182,16 +207,16 @@ func cmp04File(hs04file []string, ls04file []string, disCode string) bool {
 		//fmt.Println(hs02file[i])
 	}
 	//126行为文件内容数量
-	hsNum, _ = strconv.Atoi(hs04file[126])
-	lsNum, _ = strconv.Atoi(ls04file[126])
+	hsNum, _ = strconv.Atoi(hs04file[131])
+	lsNum, _ = strconv.Atoi(ls04file[131])
 
 	if hsNum != lsNum {
 		logging.CmpInfo(disCode, "04文件恒生导出数量与融先导出数量不一致")
 		logging.CmpInfo(disCode, "恒生导出数量:", hsNum)
 		logging.CmpInfo(disCode, "融先导出数量:", lsNum)
 	}
-	hs04Content := hs04file[127 : 127+hsNum]
-	ls04Content := ls04file[127 : 127+lsNum]
+	hs04Content := hs04file[132 : 132+hsNum]
+	ls04Content := ls04file[132 : 132+lsNum]
 	//比较文件内容
 	//logging.CmpInfo(disCode, "开始比对02文件")
 	//defer logging.CmpInfo(disCode, "02文件比对完毕")
@@ -223,6 +248,16 @@ func cmp04FileContent(hsContent []string, lsContent []string, disCode string) bo
 			if result {
 				result = false
 				logging.CmpInfo(disCode, "04文件存在问题,请核对")
+			}
+			if lsConMap[k] == "" {
+				if result {
+					result = false
+					logging.CmpInfo(disCode, "04文件存在问题,请核对")
+				}
+				logging.CmpInfo(disCode, "04文件数据缺失")
+				logging.CmpInfo(disCode, "恒生份额", v)
+				logging.CmpInfo(disCode, "融先系统导出04文件无法找到匹配数据")
+				continue
 			}
 			//交易确认日期
 			if v[24:24+8+3] != lsConMap[k][24:24+8+3] {
@@ -256,11 +291,13 @@ func cmp04FileContent(hsContent []string, lsContent []string, disCode string) bo
 				logging.CmpInfo(disCode, "恒生数据", v[118:118+16+16+3+12])
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][118:118+16+16+3+12])
 			}
+			/*
 			if v[185:185+1+5+19+4+8] != lsConMap[k][185:185+1+5+19+4+8] {
 				logging.CmpInfo(disCode, "04文件申请单号:", k, "杂七杂八的数据1不一致(完全处理标识,折扣率,资金账号,交易地区号,下发日期)")
 				logging.CmpInfo(disCode, "恒生数据", v[185:185+1+5+19+4+8])
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][185:185+1+5+19+4+8])
 			}
+			*/
 
 			if v[222:222+10] != lsConMap[k][222:222+10] {
 				logging.CmpInfo(disCode, "04文件申请单号:", k, "手续费不一致")
@@ -277,13 +314,27 @@ func cmp04FileContent(hsContent []string, lsContent []string, disCode string) bo
 				logging.CmpInfo(disCode, "恒生数据", v[242:242+7])
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][242:242+7])
 			}
-
+			/*
 			if v[315:] != lsConMap[k][315:] {
 				logging.CmpInfo(disCode, "04文件申请单号:", k, "其他信息不一致(操作网点,摘要说明,客户编号,冻结原因,冻结截止日期,出错详细信息)")
 				logging.CmpInfo(disCode, "恒生数据", v[315:])
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][315:])
 			}
+			*/
 
+		}
+	}
+	//比对恒生缺失份额数据
+	for k, v := range lsConMap {
+		if hsConMap[k] == "" {
+			if result {
+				result = false
+				logging.CmpInfo(disCode, "04文件存在问题,请核对")
+			}
+			logging.CmpInfo(disCode, "04文件数据缺失")
+			logging.CmpInfo(disCode, "融先份额", v)
+			logging.CmpInfo(disCode, "恒生系统导出04文件无法找到匹配数据")
+			continue
 		}
 	}
 
@@ -300,7 +351,7 @@ func cmp05File(hs05file []string, ls05file []string, disCode string) bool {
 	var hsNum, lsNum int
 	var result bool
 
-	if len(hs05file) < 31 || len(ls05file) < 31 {
+	if len(hs05file) < 32 || len(ls05file) < 32 {
 		logging.CmpInfo(disCode, "销售商05文件存在问题")
 		logging.CmpInfo(disCode, "恒生文件行数:", len(hs05file))
 		logging.CmpInfo(disCode, "融先文件行数:", len(ls05file))
@@ -316,7 +367,6 @@ func cmp05File(hs05file []string, ls05file []string, disCode string) bool {
 		}
 		//fmt.Println(hs02file[i])
 	}
-	//126行为文件内容数量
 	hsNum, _ = strconv.Atoi(hs05file[30])
 	lsNum, _ = strconv.Atoi(ls05file[30])
 
@@ -333,10 +383,10 @@ func cmp05File(hs05file []string, ls05file []string, disCode string) bool {
 		return false
 	}
 
-	hs05Content := hs05file[30 : 30+hsNum]
-	ls05Content := ls05file[30 : 30+lsNum]
-	fmt.Println(hs05Content)
-	fmt.Println(ls05Content)
+	hs05Content := hs05file[31 : 31+hsNum]
+	ls05Content := ls05file[31 : 31+lsNum]
+	//fmt.Println(hs05Content)
+	//fmt.Println(ls05Content)
 	//比较文件内容
 	//logging.CmpInfo(disCode, "开始比对02文件")
 	//defer logging.CmpInfo(disCode, "02文件比对完毕")
@@ -371,7 +421,7 @@ func cmp05FileContent(hsContent []string, lsContent []string, disCode string) bo
 			}
 			logging.CmpInfo(disCode, "05文件数据缺失")
 			logging.CmpInfo(disCode, "恒生份额", v)
-			logging.CmpInfo(disCode, "融先系统导出05文件无法找到匹配赎回")
+			logging.CmpInfo(disCode, "融先系统导出05文件无法找到匹配数据")
 			continue
 		}
 
