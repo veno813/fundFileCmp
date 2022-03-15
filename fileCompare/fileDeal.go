@@ -38,9 +38,14 @@ func ReadFile(n int, filePath string) {
 		//比对每个销售商下文件
 		cmpDisFile(filePath)
 		//开始比对相同销售商下的各个文件
+	} else if n == 2 {
+		//开始比对集中备份文件
+		cmpJZBFFile(filePath)
 	} else if n == 3 {
 		//开始比对客服文件
 		cmpKFFile(filePath)
+	} else if n == 4 {
+		cmpKJQSFile(filePath)
 	}
 }
 
@@ -271,7 +276,7 @@ func cmpCfmFile(hsfile string, lsfile string, disCode string) bool {
 		//fmt.Println("这个是02文件")
 		//fmt.Println(hslineText)
 		//fmt.Println(lslineText)
-		//cmp02File(hslineText, lslineText, disCode)
+		cmp02File(hslineText, lslineText, disCode)
 	} else if strings.Contains(hsfile, "_04.") {
 		cmp04File(hslineText, lslineText, disCode)
 	} else if strings.Contains(hsfile, "_05.") {
@@ -403,13 +408,13 @@ func cmpSingelKFFile(filePath string) {
 	//开始比对单个文件
 	for _, v := range cmpFileList {
 		logging.Info("开始核对", v, "文件")
-		cmpKFile(hsFilePath+v, lsFilePath+v, "KF")
+		cmpKFSgFile(hsFilePath+v, lsFilePath+v, "KF")
 		logging.Info(v, "文件核对完成")
 	}
 
 }
 
-func cmpKFile(hsfile string, lsfile string, disCode string) bool {
+func cmpKFSgFile(hsfile string, lsfile string, disCode string) bool {
 	//fmt.Println(hsfile)
 	//fmt.Println(lsfile)
 	var hslineText []string
@@ -447,7 +452,7 @@ func cmpKFile(hsfile string, lsfile string, disCode string) bool {
 	} else if strings.Contains(hsfile, "Confirm_") {
 		cmpKFCfmFile(hslineText, lslineText, disCode)
 	} else if strings.Contains(hsfile, "ConfirmDetail_") {
-		//09采用全量方式比对
+		//生成确认单号规则不一致，暂时无法比对
 		//AllCmpFile(hslineText, lslineText, disCode, "09")
 	} else if strings.Contains(hsfile, "Dividend_") {
 		//cmp10File(hslineText, lslineText, disCode)
@@ -463,6 +468,164 @@ func cmpKFile(hsfile string, lsfile string, disCode string) bool {
 	} else if strings.Contains(hsfile, "ShareDetail_") {
 		//更大了，也对不了
 		//AllCmpFile(hslineText, lslineText, disCode, "26")
+	}
+
+	return true
+}
+
+func cmpJZBFFile(filePath string) {
+	start := time.Now()
+
+	logging.Info("开始比对集中备份数据比对")
+	cmpSingelJZBFFile(filePath)
+	//fmt.Println("第", k+1, "个销售商文件比对开始")
+	cost := time.Since(start)
+	fmt.Println("总计用时:", cost)
+}
+
+//比对单个销售商下所有文件内容
+func cmpSingelJZBFFile(filePath string) {
+	//恒生文件夹路径
+	var hsFilePath string = filePath + "/hs/output/JZBF/20220309/"
+	//融先文件夹路径
+	var lsFilePath string = filePath + "/ls/output/JZBF/"
+
+	//客服文件夹下数据
+	var hsFileList []string
+	var lsFileList []string
+	var cmpFileList []string
+
+	hsFileList = getFileList(hsFilePath)
+	lsFileList = getFileList(lsFilePath)
+
+	//fmt.Println("恒生文件列表", hsFileList)
+	//fmt.Println("融先文件列表", lsFileList)
+	cmpFileList = cmpDisFileNum(hsFileList, lsFileList)
+
+	//开始比对单个文件
+	for _, v := range cmpFileList {
+		logging.Info("开始核对", v, "文件")
+		if strings.Contains(v, "_92.") {
+			cmpJZBFSgFile(hsFilePath+v, lsFilePath+v, "JZBF")
+		}
+		logging.Info(v, "文件核对完成")
+	}
+
+}
+
+func cmpJZBFSgFile(hsfile string, lsfile string, disCode string) bool {
+	//fmt.Println(hsfile)
+	//fmt.Println(lsfile)
+	var hslineText []string
+	var lslineText []string
+	//var result bool
+	fileH, err := os.Open(hsfile)
+	if err != nil {
+		logging.Fatal(err)
+	}
+
+	scannerHs := bufio.NewScanner(fileH)
+	for scannerHs.Scan() {
+		hslineText = append(hslineText, scannerHs.Text())
+		//gbk读取又乱码，需要转换
+		//lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerHs.Text())), simplifiedchinese.GBK.NewEncoder()))
+		//hslineText = append(hslineText, ConvertToString(scannerHs.Text(), "GBK", "UTF-8"))
+	}
+
+	fileL, err := os.Open(lsfile)
+	if err != nil {
+		logging.Fatal(err)
+	}
+	scannerLs := bufio.NewScanner(fileL)
+	for scannerLs.Scan() {
+		lslineText = append(lslineText, scannerLs.Text())
+		//lineText := ConvertToString(scannerLs.Text(),"GBK","UTF-8")
+		//lslineText = append(lslineText, ConvertToString(scannerLs.Text(), "GBK", "UTF-8"))
+	}
+	if strings.Contains(hsfile, "_92.") {
+		//暂时存在问题，后续进行比对
+		cmp92File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_94.") {
+		//暂时存在问题，后续进行比对
+		cmp94File(hslineText, lslineText, disCode)
+	} else if strings.Contains(hsfile, "_T1.") {
+		//暂时存在问题，后续进行比对
+		//cmpT1File(hslineText, lslineText, disCode)
+	}
+
+	return true
+}
+
+func cmpKJQSFile(filePath string) {
+	start := time.Now()
+
+	logging.Info("开始比对会计清算数据比对")
+	cmpSingelKJQSFile(filePath)
+	//fmt.Println("第", k+1, "个销售商文件比对开始")
+	cost := time.Since(start)
+	fmt.Println("总计用时:", cost)
+}
+
+//比对单个销售商下所有文件内容
+func cmpSingelKJQSFile(filePath string) {
+	//恒生文件夹路径
+	var hsFilePath string = filePath + "/hs/output/KJQS/20220309/"
+	//融先文件夹路径
+	var lsFilePath string = filePath + "/ls/output/KJQS/"
+
+	//客服文件夹下数据
+	var hsFileList []string
+	var lsFileList []string
+	var cmpFileList []string
+
+	hsFileList = getFileList(hsFilePath)
+	lsFileList = getFileList(lsFilePath)
+
+	//fmt.Println("恒生文件列表", hsFileList)
+	//fmt.Println("融先文件列表", lsFileList)
+	cmpFileList = cmpDisFileNum(hsFileList, lsFileList)
+
+	//开始比对单个文件
+	for _, v := range cmpFileList {
+		logging.Info("开始核对", v, "文件")
+		cmpKJQSSgFile(hsFilePath+v, lsFilePath+v, "KJQS")
+		logging.Info(v, "文件核对完成")
+	}
+
+}
+
+func cmpKJQSSgFile(hsfile string, lsfile string, disCode string) bool {
+	//fmt.Println(hsfile)
+	//fmt.Println(lsfile)
+	var hslineText []string
+	var lslineText []string
+	//var result bool
+	fileH, err := os.Open(hsfile)
+	if err != nil {
+		logging.Fatal(err)
+	}
+
+	scannerHs := bufio.NewScanner(fileH)
+	for scannerHs.Scan() {
+		hslineText = append(hslineText, scannerHs.Text())
+		//gbk读取又乱码，需要转换
+		//lineText, _ := ioutil.ReadAll(transform.NewReader(bytes.NewReader([]byte(scannerHs.Text())), simplifiedchinese.GBK.NewEncoder()))
+		//hslineText = append(hslineText, ConvertToString(scannerHs.Text(), "GBK", "UTF-8"))
+	}
+
+	fileL, err := os.Open(lsfile)
+	if err != nil {
+		logging.Fatal(err)
+	}
+	scannerLs := bufio.NewScanner(fileL)
+	for scannerLs.Scan() {
+		lslineText = append(lslineText, scannerLs.Text())
+		//lineText := ConvertToString(scannerLs.Text(),"GBK","UTF-8")
+		//lslineText = append(lslineText, ConvertToString(scannerLs.Text(), "GBK", "UTF-8"))
+	}
+	if strings.Contains(hsfile, "AdjustShare") {
+		//暂时存在问题，后续进行比对
+		cmpAdjustShareFile(hslineText, lslineText, disCode)
 	}
 
 	return true

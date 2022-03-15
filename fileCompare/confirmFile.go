@@ -109,8 +109,8 @@ func cmp02FileContent(hsContent []string, lsContent []string, disCode string) bo
 					result = false
 					logging.CmpInfo(disCode, "02文件存在问题,请核对")
 				}
-				logging.CmpInfo(disCode, "02文件数据缺失")
-				logging.CmpInfo(disCode, "恒生份额", v)
+				logging.CmpInfo(disCode, "02文件数据缺失", k)
+				logging.CmpInfo(disCode, "恒生数据", v)
 				logging.CmpInfo(disCode, "融先系统导出02文件无法找到匹配数据")
 				continue
 			}
@@ -170,8 +170,8 @@ func cmp02FileContent(hsContent []string, lsContent []string, disCode string) bo
 				result = false
 				logging.CmpInfo(disCode, "02文件存在问题,请核对")
 			}
-			logging.CmpInfo(disCode, "02文件数据缺失")
-			logging.CmpInfo(disCode, "融先份额", v)
+			logging.CmpInfo(disCode, "02文件数据缺失", k)
+			logging.CmpInfo(disCode, "融先数据", v)
 			logging.CmpInfo(disCode, "恒生系统导出02文件无法找到匹配数据")
 			continue
 		}
@@ -292,11 +292,11 @@ func cmp04FileContent(hsContent []string, lsContent []string, disCode string) bo
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][118:118+16+16+3+12])
 			}
 			/*
-			if v[185:185+1+5+19+4+8] != lsConMap[k][185:185+1+5+19+4+8] {
-				logging.CmpInfo(disCode, "04文件申请单号:", k, "杂七杂八的数据1不一致(完全处理标识,折扣率,资金账号,交易地区号,下发日期)")
-				logging.CmpInfo(disCode, "恒生数据", v[185:185+1+5+19+4+8])
-				logging.CmpInfo(disCode, "融先数据", lsConMap[k][185:185+1+5+19+4+8])
-			}
+				if v[185:185+1+5+19+4+8] != lsConMap[k][185:185+1+5+19+4+8] {
+					logging.CmpInfo(disCode, "04文件申请单号:", k, "杂七杂八的数据1不一致(完全处理标识,折扣率,资金账号,交易地区号,下发日期)")
+					logging.CmpInfo(disCode, "恒生数据", v[185:185+1+5+19+4+8])
+					logging.CmpInfo(disCode, "融先数据", lsConMap[k][185:185+1+5+19+4+8])
+				}
 			*/
 
 			if v[222:222+10] != lsConMap[k][222:222+10] {
@@ -304,22 +304,26 @@ func cmp04FileContent(hsContent []string, lsContent []string, disCode string) bo
 				logging.CmpInfo(disCode, "恒生数据", v[222:222+10])
 				logging.CmpInfo(disCode, "融先数据", lsConMap[k][222:222+10])
 			}
-			if v[232:232+10] != lsConMap[k][232:232+10] {
-				logging.CmpInfo(disCode, "04文件申请单号:", k, "代理费不一致")
-				logging.CmpInfo(disCode, "恒生数据", v[232:232+10])
-				logging.CmpInfo(disCode, "融先数据", lsConMap[k][232:232+10])
-			}
-			if v[242:242+7] != lsConMap[k][242:242+7] {
-				logging.CmpInfo(disCode, "04文件申请单号:", k, "单位净值不一致")
-				logging.CmpInfo(disCode, "恒生数据", v[242:242+7])
-				logging.CmpInfo(disCode, "融先数据", lsConMap[k][242:242+7])
-			}
 			/*
-			if v[315:] != lsConMap[k][315:] {
-				logging.CmpInfo(disCode, "04文件申请单号:", k, "其他信息不一致(操作网点,摘要说明,客户编号,冻结原因,冻结截止日期,出错详细信息)")
-				logging.CmpInfo(disCode, "恒生数据", v[315:])
-				logging.CmpInfo(disCode, "融先数据", lsConMap[k][315:])
-			}
+				if v[232:232+10] != lsConMap[k][232:232+10] {
+					logging.CmpInfo(disCode, "04文件申请单号:", k, "代理费不一致")
+					logging.CmpInfo(disCode, "恒生数据", v[232:232+10])
+					logging.CmpInfo(disCode, "融先数据", lsConMap[k][232:232+10])
+				}
+			*/
+			/*
+				if v[242:242+7] != lsConMap[k][242:242+7] {
+					logging.CmpInfo(disCode, "04文件申请单号:", k, "单位净值不一致")
+					logging.CmpInfo(disCode, "恒生数据", v[242:242+7])
+					logging.CmpInfo(disCode, "融先数据", lsConMap[k][242:242+7])
+				}
+			*/
+			/*
+				if v[315:] != lsConMap[k][315:] {
+					logging.CmpInfo(disCode, "04文件申请单号:", k, "其他信息不一致(操作网点,摘要说明,客户编号,冻结原因,冻结截止日期,出错详细信息)")
+					logging.CmpInfo(disCode, "恒生数据", v[315:])
+					logging.CmpInfo(disCode, "融先数据", lsConMap[k][315:])
+				}
 			*/
 
 		}
